@@ -1,0 +1,318 @@
+---
+title: 'Lab-4:2: Working with Altair'
+format:
+  html:
+    toc: true
+    embed-resources: true
+    output-file: lab-4.2.html
+    self-contained: true
+execute:
+  echo: true
+jupyter: python3
+---
+
+**Author**: M. Vaisman
+
+**Download:** [Click here](lab-4.2_empty.ipynb.zip) to download the assignment notebook
+
+**Instructions** 
+
+This notebook consists of TWO parts
+
+(1): **Demonstration section:** The instructors will work through this section during the lab period. It is meant to be educational, with various code examples provided for you. You should understand all code in the demonstration section and should run the cells on your local machine before attempting the assignment.
+
+(2): **Lab assignment:** See below
+
+**NOTE**: It is recommended that you complete this `.ipynb` file in VS-code. Activate the `anly503` environment by selecting the kernel in the upper-right corner of VS-code.  
+
+
+**Submission:**
+
+* You need to upload ONE document to Canvas when you are done
+  * (1) An HTML of the completed notebook 
+* The final uploaded version should NOT have any code-errors present 
+* All outputs must be visible and fully functional in the uploaded version, including code-cell outputs, images, graphs, etc
+
+## Demonstration
+
+Before starting the assignment, lets work through the various sub-components needed.
+
+### Dataset description
+
+Back in 2019 (pre-pandemic), Hong Kong nurses protested for overcrowding and lack of resources at public hospitals. [Click here to read the article in the Hong Kong Free Press](https://hongkongfp.com/2019/01/21/hong-kong-nurses-protest-overcrowding-lack-resources-public-hospitals-health-chief-booed/)
+
+
+It seems that someone actually collected data about wait times at the hospitals. We'll be working with that file which provides about 30,000 records of wait times (for a patient) to be seen and/or admitted.
+
+The data has the name of the hospital, the date it was collected, the maximum wait time (in hours), and extracted features from the dates.
+
+### Import
+
+```{python}
+import pandas as pd
+import altair as alt
+df = pd.read_parquet(
+    "https://github.com/anly503/datasets/raw/main/hk_hospital_wait.parquet"
+)
+```
+
+```{python}
+df.head()
+```
+
+```{python}
+df.describe
+```
+
+## Working with datasets larger than 5,000 rows
+
+As you can see, this dataset has 32,000 rows and we know that Altair has a 5,000 row limit. This is for the embedded data in a chart. 
+
+However, there is a way to do this. By enabling the `alt.data_transformers.enable('json')` transformer, each time you make a plot the data will be serialized to disk and referenced by external URL (on disk), rather than being embedded in the notebook output.
+
+This means that the notebook **will not** have the data embedded, but it gives you the ability to use the Altair transformers instead of pre-aggregating the data in Pandas (which is the preferred method.)
+
+```{python}
+alt.data_transformers.enable('default', max_rows=None)
+#alt.data_transformers.enable('json')
+```
+
+## Exploring the data
+
+We will begin by looking at the average maximum wait time, across all hospitals, by day-of-the-week and week-of-the-year, regardless of year. We'll build a heatmap witl the days of the week (day number) on the y axis and the week of the year on the x axis.
+
+### Example 1a: Heatmap of average wait time (across all hospitals) by week-of-the-year and day-of-the-week for the entire period
+
+```{python}
+(alt.Chart(df)
+ .mark_rect()
+ .encode(x='week:O',
+         y='wkday_name:O' 
+        ,color=alt.Color('mean(max_wait):Q', scale=alt.Scale(scheme='orangered')))
+)
+```
+
+### Example 1b: Same heatmap, faceted by year.
+
+```{python}
+(alt.Chart(df)
+ .mark_rect()
+ .encode(x='week:O',
+         y='wkday_name:O' 
+        ,color=alt.Color('mean(max_wait):Q', scale=alt.Scale(scheme='orangered')))
+).facet(
+    row="yr"
+)
+```
+
+### Example 2: Let's look at the average maximum wait time, by hospital, by date for the entire period. Note the tooltip.
+
+```{python}
+(alt.Chart(df)
+ .mark_rect()
+ .encode(x='yearmonthdate(hospital_time):O',
+         y='hospital_name:N',
+         color=alt.Color('mean(max_wait):Q',
+                         scale=alt.Scale(scheme='orangered'),
+                         legend=alt.Legend(type='symbol')
+                        ),
+         tooltip=['mean(max_wait)','hospital_name:N'],
+         
+        )
+)
+```
+
+### Example 3a: Average maximum wait time by hospital
+
+Click on a bar and see what happens!
+
+```{python}
+selection = alt.selection_single(fields=['hospital_name'],name='Random')
+color = alt.condition(selection,
+                      alt.value('steelblue'),
+                      alt.value('lightgray'))
+
+bar=(alt.Chart(df)
+ .mark_bar()
+ .encode(y='mean(max_wait):Q',
+         x=alt.X('hospital_name:N',
+         sort=alt.EncodingSortField(field='max_wait', op='mean', 
+                            order='descending')),
+         color=color
+    
+        )
+).add_selection(selection)
+
+bar.title ="Mean Waiting Time for Hong Kong's Hospital"
+bar.encoding.x.title = 'Hospital'
+bar.encoding.y.title = 'Average Waiting Time in Hour(s)'
+bar
+```
+
+### Example 3b: the bar chart from 3a linked to a line chart showcasing the average wait time by hospital and time of the day
+
+```{python}
+color2 = alt.condition(selection,
+                      alt.Color('hospital_name:N'),
+#                       alt.value('steelblue'),
+                      alt.value('lightgray'))
+
+line1=(alt.Chart(df)
+ .mark_line()
+ .encode(x=alt.X('hours(hospital_time):T'),
+         y='mean(max_wait):Q',
+         color=color2
+        
+    
+        )
+)
+
+line1.title ="Waiting Time for Hong Kong's Hospital"
+line1.encoding.x.title = 'Hour'
+line1.encoding.y.title = 'Average Waiting Time in Hour(s)'
+bar | line1
+
+
+```
+
+### Example 3c: the bar chart from 3a linked to a line chart showcasing the average wait time for the selected hospial by date
+
+```{python}
+line2=(alt.Chart(df)
+ .mark_line()
+ .encode(x=alt.X('yearmonthdate(hospital_time):T'),
+         y='mean(max_wait):Q'
+        
+    
+        )
+).transform_filter(selection)
+
+line2.title ="Average Waiting Time in 1 Day for Hong Kong's Hospital"
+line2.encoding.x.title = 'Date'
+line2.encoding.y.title = 'Average Waiting Time in Hour(s)'
+bar | line2
+```
+
+### Example 3d: more complex layout of 3a, 3b, and 3c
+
+```{python}
+bar|line2&line1
+```
+
+## Assignment
+
+
+Modify the code of the data/chart to do the following:
+
+* Add proper titles and labels to all elements of every chart
+* For charts 1a and 1b, reorder the days of the week to the proper order, and make sure the weeks of the year with missing data get displayed
+* For chart 2 merge make sure that there is a single row for the hospital that is broken up and remove the hospital name from the tooltip
+* For chart 3d: modify chart 3c so all lines show up and only the highlighted hospital is colorized when selected (like 3c). Also, rearrange the charts so all three are in a single row side by side
+
+Make the changes and render an html file. Submit the html file to canvas.
+
+Note: do not submit the data JSON.
+
+# 1a and 1b
+
+```{python}
+df.head()
+```
+
+```{python}
+#still need to...
+# order days of the week
+# dislplay missing data
+```
+
+```{python}
+(alt.Chart(df)
+ .mark_rect()
+ .encode(x = alt.X('week:O', axis=alt.Axis(title='Week'), scale=alt.Scale(domain=list(range(1, 54)))),
+        y = alt.Y('wkday_name:O', axis=alt.Axis(title='Weekday'), sort=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']), 
+        color=alt.Color('mean(max_wait):Q', scale=alt.Scale(scheme='orangered'), title='Mean Wait Time (Hours)'))      
+.configure_header(titleFontSize=20, labelFontSize=15)
+.properties(title='Mean Waiting Time for Hong Kong\'s Hospital'))
+
+```
+
+```{python}
+(alt.Chart(df)
+ .mark_rect()
+ .encode(x = alt.X('week:O', axis=alt.Axis(title='Week'), scale=alt.Scale(domain=list(range(1, 54)))),
+        y = alt.Y('wkday_name:O', axis=alt.Axis(title='Weekday'), sort=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']),
+        color=alt.Color('mean(max_wait):Q', scale=alt.Scale(scheme='orangered'), title='Mean Wait Time (Hours)'))
+        .properties(title='Mean Waiting Time for Hong Kong\'s Hospital')
+
+).facet(
+    row="yr"
+)
+```
+
+# 2
+
+```{python}
+#create df2 as df but if hospital_name includes A&E rename it Tin Shui Wai 
+df2 = df.copy()
+df2.loc[df2['hospital_name'].str.contains('A&E'), 'hospital_name'] = 'Tin Shui Wai'
+df2['hospital_name'].unique()
+```
+
+```{python}
+(alt.Chart(df2)
+ .mark_rect()
+ .encode(x=alt.X('yearmonthdate(hospital_time):O', title='Date'),
+         y=alt.Y('hospital_name:N', title='Hospital'),
+         color=alt.Color('mean(max_wait):Q',
+                         scale=alt.Scale(scheme='orangered'),
+                         legend=alt.Legend(type='symbol'),
+                         title = 'Mean of Max Wait TIme (Hours)'
+                        ),
+         tooltip=['mean(max_wait)'],
+        )
+.properties(title='Mean Waiting Time for Hong Kong\'s Hospital')
+)
+```
+
+# 3
+
+
+```{python}
+color2 = alt.condition(selection,
+                      alt.Color('hospital_name:N'),
+#                       alt.value('steelblue'),
+                      alt.value('lightgray')
+                      )
+
+line1=(alt.Chart(df)
+ .mark_line()
+ .encode(x=alt.X('hours(hospital_time):T'),
+         y='mean(max_wait):Q',
+         color=color2
+        )
+)
+
+line1.title ="Waiting Time for Hong Kong's Hospital"
+line1.encoding.x.title = 'Hour'
+line1.encoding.y.title = 'Average Waiting Time in Hour(s)'
+
+selection2 = alt.selection_single(on='mouseover', empty='none')
+
+line2=(alt.Chart(df)
+ .mark_line()
+ .encode(x=alt.X('yearmonthdate(hospital_time):T'),
+         y=alt.Y('mean(max_wait):Q'),
+         #use selection2 to highlight the line that is otherwise grey
+         color=alt.condition(selection2, 'hospital_name', alt.value('lightgray')))
+ .add_selection(selection2)
+)
+
+
+
+line2.title ="Average Waiting Time in 1 Day for Hong Kong's Hospital"
+line2.encoding.x.title = 'Date'
+line2.encoding.y.title = 'Average Waiting Time in Hour(s)'
+
+bar | line1 | line2
+```
+
