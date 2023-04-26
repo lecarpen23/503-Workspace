@@ -1,0 +1,5 @@
+streamlit and folium
+input city name
+select 3 amenities - downsample
+    folium for amenaties
+    include tooltip with try accept

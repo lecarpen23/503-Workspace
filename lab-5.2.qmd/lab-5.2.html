@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.2.313">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2023-04-26">
+
+<title>Lab 5.2: A tour of rayshader</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="lab-5.2_files/libs/clipboard/clipboard.min.js"></script>
+<script src="lab-5.2_files/libs/quarto-html/quarto.js"></script>
+<script src="lab-5.2_files/libs/quarto-html/popper.min.js"></script>
+<script src="lab-5.2_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="lab-5.2_files/libs/quarto-html/anchor.min.js"></script>
+<link href="lab-5.2_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="lab-5.2_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="lab-5.2_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="lab-5.2_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="lab-5.2_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="lab-5.2_files/libs/htmlwidgets-1.6.2/htmlwidgets.js"></script>
+<script src="lab-5.2_files/libs/jquery-1.12.4/jquery.min.js"></script>
+<link href="lab-5.2_files/libs/leaflet-1.3.1/leaflet.css" rel="stylesheet">
+<script src="lab-5.2_files/libs/leaflet-1.3.1/leaflet.js"></script>
+<link href="lab-5.2_files/libs/leafletfix-1.0.0/leafletfix.css" rel="stylesheet">
+<script src="lab-5.2_files/libs/proj4-2.6.2/proj4.min.js"></script>
+<script src="lab-5.2_files/libs/Proj4Leaflet-1.0.1/proj4leaflet.js"></script>
+<link href="lab-5.2_files/libs/rstudio_leaflet-1.3.1/rstudio_leaflet.css" rel="stylesheet">
+<script src="lab-5.2_files/libs/leaflet-binding-2.1.2/leaflet.js"></script>
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#rayshader-overview" id="toc-rayshader-overview" class="nav-link active" data-scroll-target="#rayshader-overview">Rayshader Overview</a></li>
+  <li><a href="#a-first-example" id="toc-a-first-example" class="nav-link" data-scroll-target="#a-first-example">A first example</a></li>
+  <li><a href="#evaluating-flood-risk-prone-areas-with-rayshader" id="toc-evaluating-flood-risk-prone-areas-with-rayshader" class="nav-link" data-scroll-target="#evaluating-flood-risk-prone-areas-with-rayshader">Evaluating flood risk prone areas with Rayshader</a>
+  <ul class="collapse">
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#elevation-data" id="toc-elevation-data" class="nav-link" data-scroll-target="#elevation-data">Elevation data</a></li>
+  <li><a href="#d-mapping" id="toc-d-mapping" class="nav-link" data-scroll-target="#d-mapping">2d mapping</a></li>
+  <li><a href="#d-mapping-1" id="toc-d-mapping-1" class="nav-link" data-scroll-target="#d-mapping-1">3d mapping</a></li>
+  <li><a href="#moving-3d-maps" id="toc-moving-3d-maps" class="nav-link" data-scroll-target="#moving-3d-maps">“Moving” 3d maps</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Lab 5.2: A tour of rayshader</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">April 26, 2023</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<p><strong>Author</strong>: Abhijit Dasgupta and Anderson Monken</p>
+<p><strong>Download:</strong> <a href="lab-5.2.qmd">Click here</a> to download the demo qmd</p>
+<p><strong>No lab assignment this week. This is a demonstration-only lab.</strong></p>
+<section id="rayshader-overview" class="level2">
+<h2 class="anchored" data-anchor-id="rayshader-overview">Rayshader Overview</h2>
+<p>We’ll explore <a href="https://rayshader.com"><code>rayshader</code></a>, a package that produces 2- and 3-dimensional data visualization in R. It primarily produces 2D and 3D maps that include elevation and lighting. It also has the ability to translate ggplot2 objects into 3D visualizations. It can also create animations of maps with rotation and custom camera movements. Let’s see how.</p>
+<p>The main concepts involved in <code>rayshader</code> are <em>raytracing</em>, <em>hillshading</em> and overlays.</p>
+<dl>
+<dt>raytracing</dt>
+<dd>
+Ray tracing is a method of graphics that simulates the physical behavior of light, i.e., how light reflects and refracts in the real world. This provides a higher degree of realism that is used in video graphics and video games. It is a computationally intensive technique that often uses GPUs for compute power. <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>
+</dd>
+<dt>hillshading</dt>
+<dd>
+A technique by which lighting effects are added to a map based on elevation variations within the landscape <a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>
+</dd>
+</dl>
+<p>Most of the functions in <code>rayshader</code> relate to how light and color work on an elevation map, and also has functions to add various overlays like points, lines, polygons, and even water bodies.</p>
+</section>
+<section id="a-first-example" class="level2">
+<h2 class="anchored" data-anchor-id="a-first-example">A first example</h2>
+<p>We first load a map in raster format.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rayshader)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>loadzip <span class="ot">=</span> <span class="fu">tempfile</span>()</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://tylermw.com/data/dem_01.tif.zip"</span>, loadzip)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>localtif <span class="ot">=</span> raster<span class="sc">::</span><span class="fu">raster</span>(<span class="fu">unzip</span>(loadzip, <span class="st">'dem_01.tif'</span>))</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">unlink</span>(loadzip)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>We then convert it to a matrix</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>elmat <span class="ot">&lt;-</span> <span class="fu">raster_to_matrix</span>(localtif)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Here’s how this file looks like:</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_map</span>(elmat <span class="sc">/</span> <span class="fu">max</span>(elmat))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="lab-5.2_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Now we’ll use an inbuilt texture to render a plot</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>elmat <span class="sc">|&gt;</span> </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sphere_shade</span>(<span class="at">texture=</span><span class="st">"desert"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_map</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="lab-5.2_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Since <code>rayshader</code> deals with light, it has the ability to change the angle of the sun in the visualization</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>elmat <span class="sc">|&gt;</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sphere_shade</span>(<span class="at">texture=</span><span class="st">"desert"</span>, <span class="at">sunangle=</span><span class="dv">45</span>) <span class="sc">|&gt;</span> <span class="fu">plot_map</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="lab-5.2_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>We’ll now add water into this landscape.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>elmat <span class="sc">|&gt;</span> </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sphere_shade</span>(<span class="at">texture =</span> <span class="st">'desert'</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_water</span>(<span class="fu">detect_water</span>(elmat), <span class="at">color =</span> <span class="st">'desert'</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_map</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="lab-5.2_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Now we can transform this into a 3D map with the <code>plot_3d</code> function.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>elmat <span class="sc">|&gt;</span> <span class="fu">sphere_shade</span>(<span class="at">texture=</span><span class="st">'desert'</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_water</span>(<span class="fu">detect_water</span>(elmat), <span class="at">color =</span> <span class="st">'desert'</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_3d</span>(elmat, <span class="at">zscale=</span><span class="dv">10</span>, <span class="at">fov=</span><span class="dv">0</span>, <span class="at">theta=</span><span class="dv">135</span>,<span class="at">zoom =</span> <span class="fl">0.75</span>, <span class="at">phi =</span> <span class="dv">45</span>, <span class="at">windowsize =</span> <span class="fu">c</span>(<span class="dv">1000</span>,<span class="dv">1000</span>))</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">render_snapshot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="lab-5.2_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>rgl<span class="sc">::</span><span class="fu">clear3d</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="evaluating-flood-risk-prone-areas-with-rayshader" class="level1">
+<h1>Evaluating flood risk prone areas with Rayshader</h1>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Adapted from: <a href="https://wcmbishop.github.io/rayshader-demo/">https://wcmbishop.github.io/rayshader-demo/</a></p>
+<p>Use a tool like <a href="https://geojson.io">https://geojson.io</a> to find the right bounding box for your map of interest.</p>
+<p>Find the coordinates and enter them here:</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(leaflet)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># define bounding box with longitude/latitude coordinates</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># south beach Miami</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co"># bbox &lt;- list(</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co">#   p1 = list(long = -80.1174, lat = 25.7177),</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co">#   p2 = list(long = -80.2136, lat = 25.8089)</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Florida Keys</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co"># bbox &lt;- list(</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co">#   p1 = list(long = -80.5054, lat = 25.0293),</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co">#   p2 = list(long = -80.7928, lat = 24.8462)</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="co"># san jose</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>bbox <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">p1 =</span> <span class="fu">list</span>(<span class="at">long =</span> <span class="sc">-</span><span class="fl">121.8033</span>, <span class="at">lat =</span> <span class="fl">37.2732</span>),</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">p2 =</span> <span class="fu">list</span>(<span class="at">long =</span> <span class="sc">-</span><span class="fl">122.1459</span>, <span class="at">lat =</span> <span class="fl">37.4816</span>)</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Now, use Leaflet to confirm you have the map area you intended</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">leaflet</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">addTiles</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">addRectangles</span>(</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">lng1 =</span> bbox<span class="sc">$</span>p1<span class="sc">$</span>long, <span class="at">lat1 =</span> bbox<span class="sc">$</span>p1<span class="sc">$</span>lat,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">lng2 =</span> bbox<span class="sc">$</span>p2<span class="sc">$</span>long, <span class="at">lat2 =</span> bbox<span class="sc">$</span>p2<span class="sc">$</span>lat,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">fillColor =</span> <span class="st">"transparent"</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fitBounds</span>(</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">lng1 =</span> bbox<span class="sc">$</span>p1<span class="sc">$</span>long, <span class="at">lat1 =</span> bbox<span class="sc">$</span>p1<span class="sc">$</span>lat,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">lng2 =</span> bbox<span class="sc">$</span>p2<span class="sc">$</span>long, <span class="at">lat2 =</span> bbox<span class="sc">$</span>p2<span class="sc">$</span>lat,</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="leaflet html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-8ae09c16c831bc2c53bf" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-8ae09c16c831bc2c53bf">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addTiles","args":["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",null,null,{"minZoom":0,"maxZoom":18,"tileSize":256,"subdomains":"abc","errorTileUrl":"","tms":false,"noWrap":false,"zoomOffset":0,"zoomReverse":false,"opacity":1,"zIndex":1,"detectRetina":false,"attribution":"&copy; <a href=\"https://openstreetmap.org\">OpenStreetMap<\/a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA<\/a>"}]},{"method":"addRectangles","args":[37.2732,-121.8033,37.4816,-122.1459,null,null,{"interactive":true,"className":"","stroke":true,"color":"#03F","weight":5,"opacity":0.5,"fill":true,"fillColor":"transparent","fillOpacity":0.2,"smoothFactor":1,"noClip":false},null,null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},null]}],"limits":{"lat":[37.2732,37.4816],"lng":[-122.1459,-121.8033]},"fitBounds":[37.2732,-121.8033,37.4816,-122.1459,[]]},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+</section>
+<section id="elevation-data" class="level2">
+<h2 class="anchored" data-anchor-id="elevation-data">Elevation data</h2>
+<p>Define the image size that will be used to download the associated elevation data.</p>
+<p>Function that is designed in the online tutorial:</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">#https://github.com/wcmbishop/rayshader-demo/blob/master/R/image-size.R</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>define_image_size <span class="ot">&lt;-</span> <span class="cf">function</span>(bbox, <span class="at">major_dim =</span> <span class="dv">400</span>) {</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calculate aspect ration (width/height) from lat/long bounding box</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  aspect_ratio <span class="ot">&lt;-</span> <span class="fu">abs</span>((bbox<span class="sc">$</span>p1<span class="sc">$</span>long <span class="sc">-</span> bbox<span class="sc">$</span>p2<span class="sc">$</span>long) <span class="sc">/</span> (bbox<span class="sc">$</span>p1<span class="sc">$</span>lat <span class="sc">-</span> bbox<span class="sc">$</span>p2<span class="sc">$</span>lat))</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># define dimensions</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  img_width <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(aspect_ratio <span class="sc">&gt;</span> <span class="dv">1</span>, major_dim, major_dim<span class="sc">*</span>aspect_ratio) <span class="sc">%&gt;%</span> <span class="fu">round</span>()</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  img_height <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(aspect_ratio <span class="sc">&lt;</span> <span class="dv">1</span>, major_dim, major_dim<span class="sc">/</span>aspect_ratio) <span class="sc">%&gt;%</span> <span class="fu">round</span>()</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  size_str <span class="ot">&lt;-</span> <span class="fu">paste</span>(img_width, img_height, <span class="at">sep =</span> <span class="st">","</span>)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">height =</span> img_height, <span class="at">width =</span> img_width, <span class="at">size =</span> size_str)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>image_size <span class="ot">&lt;-</span> <span class="fu">define_image_size</span>(bbox, <span class="at">major_dim =</span> <span class="dv">600</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Download elevation data from USGS elevation API.</p>
+<p>Helpful function provided in online tutorial:</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">#https://github.com/wcmbishop/rayshader-demo/blob/master/R/elevation-api.R</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>get_usgs_elevation_data <span class="ot">&lt;-</span> <span class="cf">function</span>(bbox, <span class="at">size =</span> <span class="st">"400,400"</span>, <span class="at">file =</span> <span class="cn">NULL</span>, </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">sr_bbox =</span> <span class="dv">4326</span>, <span class="at">sr_image =</span> <span class="dv">4326</span>) {</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">require</span>(httr)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span><span class="al">TODO</span><span class="co"> - validate inputs</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  url <span class="ot">&lt;-</span> <span class="fu">parse_url</span>(<span class="st">"https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage"</span>)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <span class="fu">GET</span>(</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    url, </span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">query =</span> <span class="fu">list</span>(</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">bbox =</span> <span class="fu">paste</span>(bbox<span class="sc">$</span>p1<span class="sc">$</span>long, bbox<span class="sc">$</span>p1<span class="sc">$</span>lat, bbox<span class="sc">$</span>p2<span class="sc">$</span>long, bbox<span class="sc">$</span>p2<span class="sc">$</span>lat,</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>                   <span class="at">sep =</span> <span class="st">","</span>),</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">bboxSR =</span> sr_bbox,</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">imageSR =</span> sr_image,</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">size =</span> size,</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">format =</span> <span class="st">"tiff"</span>,</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">pixelType =</span> <span class="st">"F32"</span>,</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>      <span class="at">noDataInterpretation =</span> <span class="st">"esriNoDataMatchAny"</span>,</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>      <span class="at">interpolation =</span> <span class="st">"+RSP_BilinearInterpolation"</span>,</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>      <span class="at">f =</span> <span class="st">"json"</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">status_code</span>(res) <span class="sc">==</span> <span class="dv">200</span>) {</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>    body <span class="ot">&lt;-</span> <span class="fu">content</span>(res, <span class="at">type =</span> <span class="st">"application/json"</span>)</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>    img_res <span class="ot">&lt;-</span> <span class="fu">GET</span>(body<span class="sc">$</span>href)</span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>    img_bin <span class="ot">&lt;-</span> <span class="fu">content</span>(img_res, <span class="st">"raw"</span>)</span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is.null</span>(file)) </span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>      file <span class="ot">&lt;-</span> <span class="fu">tempfile</span>(<span class="st">"elev_matrix"</span>, <span class="at">fileext =</span> <span class="st">".tif"</span>)</span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>    <span class="fu">writeBin</span>(img_bin, file)</span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>    <span class="fu">message</span>(<span class="fu">paste</span>(<span class="st">"image saved to file:"</span>, file))</span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>    <span class="fu">warning</span>(res)</span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>(file)</span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Pull the elevation data</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>elev_file <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="st">"elevation.tif"</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">get_usgs_elevation_data</span>(bbox, <span class="at">size =</span> image_size<span class="sc">$</span>size, <span class="at">file =</span> elev_file,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">sr_bbox =</span> <span class="dv">4326</span>, <span class="at">sr_image =</span> <span class="dv">4326</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="d-mapping" class="level2">
+<h2 class="anchored" data-anchor-id="d-mapping">2d mapping</h2>
+<p>Load the elevation data and plot it in 2d</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load elevation data</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>elev_img <span class="ot">&lt;-</span> raster<span class="sc">::</span><span class="fu">raster</span>(elev_file)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>elev_matrix <span class="ot">&lt;-</span> <span class="fu">matrix</span>(</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  raster<span class="sc">::</span><span class="fu">extract</span>(elev_img, raster<span class="sc">::</span><span class="fu">extent</span>(elev_img), <span class="at">buffer =</span> <span class="dv">1000</span>), </span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">nrow =</span> <span class="fu">ncol</span>(elev_img), <span class="at">ncol =</span> <span class="fu">nrow</span>(elev_img)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate rayshader layers</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>ambmat <span class="ot">&lt;-</span> <span class="fu">ambient_shade</span>(elev_matrix, <span class="at">zscale =</span> <span class="dv">30</span>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>raymat <span class="ot">&lt;-</span> <span class="fu">ray_shade</span>(elev_matrix, <span class="at">zscale =</span> <span class="dv">30</span>, <span class="at">lambert =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>watermap <span class="ot">&lt;-</span> <span class="fu">detect_water</span>(elev_matrix)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="co"># plot 2D</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>elev_matrix <span class="sc">%&gt;%</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sphere_shade</span>(<span class="at">texture =</span> <span class="st">"imhof4"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_water</span>(watermap, <span class="at">color =</span> <span class="st">"imhof4"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  <span class="co">#add_shadow(raymat, max_darken = 0.5) %&gt;%</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  <span class="co">#add_shadow(ambmat, max_darken = 0.5) %&gt;%</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_map</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="lab-5.2_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="d-mapping-1" class="level2">
+<h2 class="anchored" data-anchor-id="d-mapping-1">3d mapping</h2>
+<p>Now run it again and this time plot in 3d</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>zscale <span class="ot">&lt;-</span> <span class="dv">30</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>elev_matrix <span class="sc">%&gt;%</span> </span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sphere_shade</span>(<span class="at">texture =</span> <span class="st">"imhof4"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_water</span>(watermap, <span class="at">color =</span> <span class="st">"imhof3"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">#add_shadow(raymat, max_darken = 0.5) %&gt;%</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">#add_shadow(ambmat, max_darken = 0.5) %&gt;%</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_3d</span>(elev_matrix, <span class="at">zscale =</span> zscale, <span class="at">windowsize =</span> <span class="fu">c</span>(<span class="dv">1200</span>, <span class="dv">1000</span>),</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>          <span class="at">water =</span> <span class="cn">TRUE</span>, <span class="at">soliddepth =</span> <span class="sc">-</span><span class="fu">max</span>(elev_matrix)<span class="sc">/</span>zscale, <span class="at">wateralpha =</span> <span class="fl">0.5</span>,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>          <span class="at">waterdepth =</span> <span class="fl">25.741488</span>,</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">theta =</span> <span class="dv">25</span>, <span class="at">phi =</span> <span class="dv">30</span>, <span class="at">zoom =</span> <span class="fl">0.65</span>, <span class="at">fov =</span> <span class="dv">60</span>)</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="fu">render_snapshot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="lab-5.2_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>rgl<span class="sc">::</span><span class="fu">clear3d</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="moving-3d-maps" class="level2">
+<h2 class="anchored" data-anchor-id="moving-3d-maps">“Moving” 3d maps</h2>
+<p>Sea level rise projections for major world cities - <a href="https://earth.org/sea-level-rise-projections/">https://earth.org/sea-level-rise-projections/</a></p>
+<p>Rather than just a single 3d map, you can make a gif!</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>n_frames <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>zscale <span class="ot">&lt;-</span> <span class="dv">30</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co"># frame transition variables</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>waterdepthvalues <span class="ot">&lt;-</span> <span class="fu">mean</span>(elev_matrix)<span class="sc">*</span><span class="dv">1</span> <span class="sc">-</span> <span class="fu">mean</span>(elev_matrix)<span class="sc">*</span> <span class="fl">1.5</span> <span class="sc">*</span> <span class="fu">cos</span>(<span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">2</span><span class="sc">*</span>pi,<span class="at">length.out =</span> n_frames))</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>thetavalues <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">90</span> <span class="sc">+</span> <span class="dv">45</span> <span class="sc">*</span> <span class="fu">cos</span>(<span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">2</span><span class="sc">*</span>pi, <span class="at">length.out =</span> n_frames))</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="co"># shadow layers</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="co">#ambmat &lt;- ambient_shade(elev_matrix, zscale = zscale)</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="co">#raymat &lt;- ray_shade(elev_matrix, zscale = zscale, lambert = TRUE)</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="co"># generate .png frame images</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>img_frames <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"drain"</span>, <span class="fu">seq_len</span>(n_frames), <span class="st">".png"</span>)</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(n_frames)) {</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">message</span>(<span class="fu">paste</span>(<span class="st">" - image"</span>, i, <span class="st">"of"</span>, n_frames))</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>  elev_matrix <span class="sc">%&gt;%</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sphere_shade</span>(<span class="at">texture =</span> <span class="st">"imhof4"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">add_water</span>(watermap, <span class="at">color =</span> <span class="st">"imhof3"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">#add_shadow(ambmat, 0.5)  %&gt;%</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>    <span class="co">#add_shadow(raymat, 0.5) %&gt;%</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot_3d</span>(elev_matrix, <span class="at">solid =</span> <span class="cn">TRUE</span>, <span class="at">shadow =</span> <span class="cn">TRUE</span>, <span class="at">zscale =</span> zscale, </span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>            <span class="at">water =</span> <span class="cn">TRUE</span>, <span class="at">watercolor =</span> <span class="st">"imhof3"</span>, <span class="at">wateralpha =</span> <span class="fl">0.8</span>, </span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>            <span class="at">waterlinecolor =</span> <span class="st">"#ffffff"</span>, <span class="at">waterlinealpha =</span> <span class="fl">0.5</span>,</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>            <span class="at">waterdepth =</span> waterdepthvalues[i]<span class="sc">/</span>zscale, </span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>            <span class="at">theta =</span> thetavalues[i], <span class="at">phi =</span> <span class="dv">45</span>)</span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">render_snapshot</span>(img_frames[i])</span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>  rgl<span class="sc">::</span><span class="fu">clear3d</span>()</span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a><span class="co"># build gif</span></span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a>magick<span class="sc">::</span><span class="fu">image_write_gif</span>(magick<span class="sc">::</span><span class="fu">image_read</span>(img_frames), </span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a>                        <span class="at">path =</span> <span class="st">"water_rise.gif"</span>, </span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a>                        <span class="at">delay =</span> <span class="dv">6</span><span class="sc">/</span>n_frames)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "D:\\Users\\carpenterl\\503-Workspace\\lab-5.2.qmd\\water_rise.gif"</code></pre>
+</div>
+</div>
+<p><img src="water_rise.gif" class="img-fluid"></p>
+</section>
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Digital trends (<a href="https://www.digitaltrends.com/computing/what-is-ray-tracing/">link</a>), NVIDIA (<a href="https://developer.nvidia.com/rtx/ray-tracing">link</a>)<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p><a href="https://earthquake.usgs.gov/education/geologicmaps/hillshades.php">US Geological Survey</a><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
