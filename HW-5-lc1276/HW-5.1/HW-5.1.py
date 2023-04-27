@@ -1,4 +1,5 @@
 import streamlit as st
+from OSMPythonTools.nominatim import Nominatim
 
 option = st.selectbox('Which city would you like to focus on? ', ('Washington DC', 'New York City'))
 st.write(option)
@@ -7,6 +8,12 @@ if city == 'Washington DC':
     city = 'Washington, District of Columbia, United States'
 elif city == 'New York City':
     city = 'New York, United States'
+
+nominatim = Nominatim()
+if city == 'Washington, District of Columbia, United States':
+    area_id = nominatim.query(city).areaId()
+elif city == 'New York, United States':
+    area_id = nominatim.query(city).areaId()
 
 
 
@@ -27,11 +34,30 @@ api = Api()
 nominatim = Nominatim()
 overpass = Overpass()
 
-query = overpassQueryBuilder(area=city, elementType='node', selector=f'amenity={amenity}', out='body')
-result = overpass.query(query, timeout=1000)
+location = nominatim.query(city).toJSON()[0]
+lat, lon = location['lat'], location['lon']
+st.write('lat: ' + lat)
+st.write('lon: ' + lon)
 
-#create a map from the query result with folium
-map = folium.Map(location=[result.elements()[0].lat(), result.elements()[0].lon()], zoom_start=15)
-for element in result.elements():
-    folium.Marker([element.lat(), element.lon()], popup=element.tags()).add_to(map)
-map.save('map.html')
+query = overpassQueryBuilder(area=area_id, elementType='node', selector=f'amenity={amenity}')
+results = overpass.query(query)
+result = results.elements()
+
+import random
+max_results = 150
+if len(result) > max_results:
+    result = random.sample(result, max_results)
+else:
+    result = result
+
+st.write('Number of results: ' + str(len(result)))
+
+map = folium.Map(location=[lat, lon], zoom_start=13)
+
+for element in result:
+    if element.type() == 'node':
+        popup = element.tag('name') if element.tag('name') else element.tag('amenity')
+        folium.Marker([element.lat(), element.lon()], popup=popup).add_to(map)
+
+from streamlit_folium import folium_static
+folium_static(map)

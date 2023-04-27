@@ -3,3 +3,72 @@ input city name
 select 3 amenities - downsample
     folium for amenaties
     include tooltip with try accept
+
+
+
+
+import streamlit as st
+
+option = st.selectbox('Which city would you like to focus on? ', ('Washington DC', 'New York City'))
+st.write(option)
+city = option
+if city == 'Washington DC':
+    city = 'Washington, District of Columbia, United States'
+elif city == 'New York City':
+    city = 'New York, United States'
+
+if city == 'Washington, District of Columbia, United States':
+    city_area = '3609052327'
+elif city == 'New York, United States':
+    city_area = '2459115'
+
+
+
+option2 = st.selectbox('What would you like to find?', ('University', 'Cafe', 'Bar'))
+st.write(option2)
+amenity = option2
+amenity = amenity.lower()
+
+st.write('User input (city): ' + city)
+st.write('User input (amenity): ' + amenity)
+
+#create a map with foliumn with the selected options
+import folium
+from OSMPythonTools.api import Api
+from OSMPythonTools.nominatim import Nominatim
+from OSMPythonTools.overpass import overpassQueryBuilder, Overpass
+api = Api()
+nominatim = Nominatim()
+overpass = Overpass()
+
+location = nominatim.query(city).toJSON()[0]
+lat, lon = location['lat'], location['lon']
+st.write('lat: ' + lat)
+st.write('lon: ' + lon)
+
+query = overpassQueryBuilder(area=f'rel({city_area});', elementType='node', selector=f'amenity={amenity}')
+result = api.Get(query, asGeoJSON=True)
+st.write(result)
+result.toJSON()
+st.write(result.toJSON())
+result = result.nodes()
+nodes = []
+for node in result:
+    nodes.append(node)
+
+st.write(nodes)
+
+import random
+max_nodes = 150
+if len(nodes) > max_nodes:
+    nodes = random.sample(nodes, max_nodes)
+
+#create a map from the query result with folium
+map = folium.Map(location=[lat, lon], zoom_start=13)
+
+for node in nodes:
+    popup = f"{node.tag('name')}"
+    folium.Marker([node.lat(), node.lon()], popup=popup).add_to(map)
+
+
+st.write(map)
